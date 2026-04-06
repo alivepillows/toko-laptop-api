@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Laptop API</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background:#f7f7f7; color:#222; }
+    h1, h2 { color: #333; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 18px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    label { display:block; margin-top:12px; font-weight:600; }
+    input, textarea { width:100%; padding:10px; margin-top:6px; border:1px solid #ccc; border-radius:6px; }
+    button { margin-top:14px; padding:10px 16px; border:none; border-radius:6px; background:#007bff;color:#fff; cursor:pointer; }
+    button:hover { background:#0056b3; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { padding:10px; border:1px solid #ddd; text-align:left; }
+    .error { color:#b00020; margin-top:10px; }
+    .success { color:#117a00; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Client API Laptop</h1>
+    <p>Gunakan tombol dan formulir di bawah untuk memanggil endpoint API <strong>GET</strong>, <strong>POST</strong>, dan <strong>UPDATE</strong>.</p>
+    <p>Pastikan server Laravel berjalan di <code>http://localhost:8000</code>.</p>
+  </div>
+
+  <div class="card">
+    <h2>Daftar Laptop</h2>
+    <button id="loadButton">Muat Daftar Laptop</button>
+    <div id="listResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>Tambah Laptop Baru</h2>
+    <form id="createForm">
+      <label for="createName">Nama</label>
+      <input id="createName" name="name" placeholder="Contoh: MacBook Pro" required />
+
+      <label for="createBrand">Brand</label>
+      <input id="createBrand" name="brand" placeholder="Contoh: Apple" required />
+
+      <label for="createProcessor">Processor</label>
+      <input id="createProcessor" name="processor" placeholder="Contoh: M2" required />
+
+      <label for="createRam">RAM (GB)</label>
+      <input id="createRam" name="ram_gb" type="number" min="1" placeholder="Contoh: 16" required />
+
+      <label for="createStorage">Storage (GB)</label>
+      <input id="createStorage" name="storage_gb" type="number" min="1" placeholder="Contoh: 512" required />
+
+      <label for="createPrice">Harga</label>
+      <input id="createPrice" name="price" type="number" min="0" step="0.01" placeholder="Contoh: 25000000" required />
+
+      <label for="createStock">Stock</label>
+      <input id="createStock" name="stock" type="number" min="0" placeholder="Contoh: 5" required />
+
+      <label for="createDescription">Deskripsi</label>
+      <textarea id="createDescription" name="description" rows="3" placeholder="Opsional"></textarea>
+
+      <button type="submit">Tambahkan Laptop</button>
+      <div id="createMessage"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Update Laptop</h2>
+    <form id="updateForm">
+      <label for="updateId">ID Laptop</label>
+      <input id="updateId" name="id" type="number" min="1" placeholder="Contoh: 1" required />
+
+      <label for="updateName">Nama</label>
+      <input id="updateName" name="name" placeholder="Contoh: MacBook Pro" />
+
+      <label for="updateBrand">Brand</label>
+      <input id="updateBrand" name="brand" placeholder="Contoh: Apple" />
+
+      <label for="updateProcessor">Processor</label>
+      <input id="updateProcessor" name="processor" placeholder="Contoh: M2" />
+
+      <label for="updateRam">RAM (GB)</label>
+      <input id="updateRam" name="ram_gb" type="number" min="1" placeholder="Contoh: 16" />
+
+      <label for="updateStorage">Storage (GB)</label>
+      <input id="updateStorage" name="storage_gb" type="number" min="1" placeholder="Contoh: 512" />
+
+      <label for="updatePrice">Harga</label>
+      <input id="updatePrice" name="price" type="number" min="0" step="0.01" placeholder="Contoh: 25000000" />
+
+      <label for="updateStock">Stock</label>
+      <input id="updateStock" name="stock" type="number" min="0" placeholder="Contoh: 5" />
+
+      <label for="updateDescription">Deskripsi</label>
+      <textarea id="updateDescription" name="description" rows="3" placeholder="Opsional"></textarea>
+
+      <button type="submit">Update Laptop</button>
+      <div id="updateMessage"></div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const API_BASE = 'http://localhost:8000/api/laptops';
+    const listResult = document.getElementById('listResult');
+    const createMessage = document.getElementById('createMessage');
+    const updateMessage = document.getElementById('updateMessage');
+
+    document.getElementById('loadButton').addEventListener('click', loadLaptops);
+    document.getElementById('createForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      await createLaptop();
+    });
+    document.getElementById('updateForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      await updateLaptop();
+    });
+
+    async function loadLaptops() {
+      try {
+        const response = await axios.get(API_BASE);
+        const laptops = response.data.data;
+        if (!laptops.length) {
+          listResult.innerHTML = '<p>Tidak ada data laptop.</p>';
+          return;
+        }
+
+        const rows = laptops.map(item => `
+          <tr>
+            <td>${item.id}</td>
+            <td>${item.name}</td>
+            <td>${item.brand}</td>
+            <td>${item.processor}</td>
+            <td>${item.ram_gb}</td>
+            <td>${item.storage_gb}</td>
+            <td>${item.price}</td>
+            <td>${item.stock}</td>
+            <td>${item.description ?? ''}</td>
+          </tr>
+        `).join('');
+
+        listResult.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Brand</th>
+                <th>Processor</th>
+                <th>RAM</th>
+                <th>Storage</th>
+                <th>Harga</th>
+                <th>Stock</th>
+                <th>Deskripsi</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      } catch (error) {
+        listResult.innerHTML = `<p class="error">Gagal memuat data: ${getErrorMessage(error)}</p>`;
+      }
+    }
+
+    async function createLaptop() {
+      clearMessages();
+      const form = document.getElementById('createForm');
+      const payload = Object.fromEntries(new FormData(form).entries());
+
+      try {
+        const response = await axios.post(API_BASE, payload);
+        createMessage.innerHTML = `<p class="success">${response.data.message}</p>`;
+        form.reset();
+        loadLaptops();
+      } catch (error) {
+        createMessage.innerHTML = `<p class="error">${getErrorMessage(error)}</p>`;
+      }
+    }
+
+    async function updateLaptop() {
+      clearMessages();
+      const form = document.getElementById('updateForm');
+      const id = document.getElementById('updateId').value.trim();
+      if (!id) {
+        updateMessage.innerHTML = '<p class="error">Masukkan ID laptop untuk diupdate.</p>';
+        return;
+      }
+
+      const data = Object.fromEntries(new FormData(form).entries());
+      delete data.id;
+      const payload = {};
+      for (const [key, value] of Object.entries(data)) {
+        if (value.trim() !== '') {
+          payload[key] = value;
+        }
+      }
+
+      if (Object.keys(payload).length === 0) {
+        updateMessage.innerHTML = '<p class="error">Masukkan setidaknya satu field untuk diubah.</p>';
+        return;
+      }
+
+      try {
+        const response = await axios.put(`${API_BASE}/${id}`, payload);
+        updateMessage.innerHTML = `<p class="success">${response.data.message}</p>`;
+        form.reset();
+        loadLaptops();
+      } catch (error) {
+        updateMessage.innerHTML = `<p class="error">${getErrorMessage(error)}</p>`;
+      }
+    }
+
+    function getErrorMessage(error) {
+      if (error.response && error.response.data) {
+        const data = error.response.data;
+        if (data.errors) {
+          return Object.values(data.errors).flat().join(' ');
+        }
+        return data.message || JSON.stringify(data);
+      }
+      return error.message || 'Terjadi kesalahan.';
+    }
+
+    function clearMessages() {
+      createMessage.innerHTML = '';
+      updateMessage.innerHTML = '';
+    }
+
+    loadLaptops();
+  </script>
+</body>
+</html>

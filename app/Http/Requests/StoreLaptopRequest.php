@@ -14,7 +14,7 @@ class StoreLaptopRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:laptops,name'],
             'brand' => ['required', 'string', 'max:100'],
             'processor' => ['required', 'string', 'max:100'],
             'ram_gb' => ['required', 'integer', 'min:1'],
@@ -22,6 +22,20 @@ class StoreLaptopRequest extends FormRequest
             'price' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'description' => ['nullable', 'string'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.unique' => 'Nama laptop sudah terdaftar.',
+            'name.required' => 'Nama laptop wajib diisi.',
+            'brand.required' => 'Brand wajib diisi.',
+            'processor.required' => 'Processor wajib diisi.',
+            'ram_gb.required' => 'RAM wajib diisi.',
+            'storage_gb.required' => 'Storage wajib diisi.',
+            'price.required' => 'Harga wajib diisi.',
+            'stock.required' => 'Stock wajib diisi.',
         ];
     }
 }
